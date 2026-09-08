@@ -1,0 +1,21 @@
+{
+  "name": "todolistnode",
+  "version": "1.0.0",
+  "description": "Backend To-Do List desarrollado con Node.js y Express",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.0.0",
+    "express": "^5.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}
