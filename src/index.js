@@ -1,7 +1,10 @@
+import 'dotenv/config';
 import express from 'express';
-import dotenv from 'dotenv';
 
-dotenv.config();
+import {
+    testConnection,
+} from './db/connection.js';
+
 
 const app = express();
 
@@ -25,8 +28,24 @@ app.use((req, res) => {
 });
 
 
-app.listen(PORT, () => {
-    console.log(
-        `Servidor ejecutándose en http://localhost:${PORT}`
-    );
-});
+const startServer = async () => {
+    try {
+        await testConnection();
+
+        app.listen(PORT, () => {
+            console.log(
+                `Servidor ejecutándose en http://localhost:${PORT}`
+            );
+        });
+    } catch (error) {
+        console.error(
+            'Error al conectar con MySQL:',
+            error.message
+        );
+
+        process.exit(1);
+    }
+};
+
+
+startServer();
