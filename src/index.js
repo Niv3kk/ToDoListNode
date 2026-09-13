@@ -1,8 +1,11 @@
 import "dotenv/config";
 import express from "express";
+
 import userRoutes from "./routes/user.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import tagRoutes from "./routes/tag.routes.js";
+import taskRoutes from "./routes/task.routes.js";
+
 import { testConnection } from "./db/connection.js";
 
 const app = express();
@@ -20,6 +23,7 @@ app.get("/", (req, res) => {
 app.use("/users", userRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/tags", tagRoutes);
+app.use("/tasks", taskRoutes);
 
 app.use((req, res) => {
     res.status(404).json({
