@@ -7,6 +7,7 @@ import tagRoutes from "./routes/tag.routes.js";
 import taskRoutes from "./routes/task.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { testConnection } from "./db/connection.js";
+import { authMiddleware } from "./middlewares/auth.middleware.js";
 
 const app = express();
 
@@ -22,9 +23,24 @@ app.get("/", (req, res) => {
 
 app.use("/users", userRoutes);
 app.use("/auth", authRoutes);
-app.use("/categories", categoryRoutes);
-app.use("/tags", tagRoutes);
-app.use("/tasks", taskRoutes);
+
+app.use(
+    "/categories",
+    authMiddleware,
+    categoryRoutes
+);
+
+app.use(
+    "/tags",
+    authMiddleware,
+    tagRoutes
+);
+
+app.use(
+    "/tasks",
+    authMiddleware,
+    taskRoutes
+);
 
 app.use((req, res) => {
     res.status(404).json({
