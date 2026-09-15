@@ -25,7 +25,6 @@ const login = async (req, res) => {
                     password
                 FROM users
                 WHERE email = ?
-                LIMIT 1
             `,
             [normalizedEmail]
         );
