@@ -9,17 +9,13 @@ import { isValidUUID } from "../utils/uuid.util.js";
 
 const createCategory = async (req, res) => {
   try {
-    const { name, user_id } = req.body;
+    const { name } = req.body;
+    const userId = req.user.id;
 
     if (!name?.trim()) {
       return res.status(400).json({
-        message: "El nombre de la categoría es obligatorio.",
-      });
-    }
-
-    if (!user_id) {
-      return res.status(400).json({
-        message: "El usuario es obligatorio.",
+        message:
+          "El nombre de la categoría es obligatorio.",
       });
     }
 
@@ -35,13 +31,13 @@ const createCategory = async (req, res) => {
                 )
                 VALUES (?, ?, ?)
             `,
-      [id, normalizedName, user_id],
+      [id, normalizedName, userId]
     );
 
     const category = categoryDecorator({
       id,
       name: normalizedName,
-      user_id,
+      user_id: userId,
     });
 
     return res.status(201).json({
@@ -50,17 +46,15 @@ const createCategory = async (req, res) => {
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") {
       return res.status(409).json({
-        message: "Ya existe una categoría con ese nombre.",
+        message:
+          "Ya existe una categoría con ese nombre.",
       });
     }
 
-    if (error.code === "ER_NO_REFERENCED_ROW_2") {
-      return res.status(400).json({
-        message: "El usuario indicado no existe.",
-      });
-    }
-
-    console.error("Error al crear categoría:", error.message);
+    console.error(
+      "Error al crear categoría:",
+      error.message
+    );
 
     return res.status(500).json({
       message: "Error interno del servidor.",
@@ -70,13 +64,7 @@ const createCategory = async (req, res) => {
 
 const getCategories = async (req, res) => {
   try {
-    const { user_id } = req.query;
-
-    if (!user_id) {
-      return res.status(400).json({
-        message: "El usuario es obligatorio.",
-      });
-    }
+    const userId = req.user.id;
 
     const [categories] = await pool.execute(
       `
@@ -88,14 +76,17 @@ const getCategories = async (req, res) => {
                 WHERE user_id = ?
                 ORDER BY name ASC
             `,
-      [user_id],
+      [userId]
     );
 
     return res.status(200).json({
       data: categoriesDecorator(categories),
     });
   } catch (error) {
-    console.error("Error al listar categorías:", error.message);
+    console.error(
+      "Error al listar categorías:",
+      error.message
+    );
 
     return res.status(500).json({
       message: "Error interno del servidor.",
@@ -106,23 +97,20 @@ const getCategories = async (req, res) => {
 const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, user_id } = req.body;
+    const { name } = req.body;
+    const userId = req.user.id;
 
     if (!isValidUUID(id)) {
       return res.status(400).json({
-        message: "El id de la categoría no es válido.",
+        message:
+          "El id de la categoría no es válido.",
       });
     }
 
     if (!name?.trim()) {
       return res.status(400).json({
-        message: "El nombre de la categoría es obligatorio.",
-      });
-    }
-
-    if (!user_id) {
-      return res.status(400).json({
-        message: "El usuario es obligatorio.",
+        message:
+          "El nombre de la categoría es obligatorio.",
       });
     }
 
@@ -135,7 +123,7 @@ const updateCategory = async (req, res) => {
                 WHERE id = ?
                 AND user_id = ?
             `,
-      [normalizedName, id, user_id],
+      [normalizedName, id, userId]
     );
 
     if (result.affectedRows === 0) {
@@ -147,21 +135,26 @@ const updateCategory = async (req, res) => {
     const category = categoryDecorator({
       id,
       name: normalizedName,
-      user_id,
+      user_id: userId,
     });
 
     return res.status(200).json({
-      message: "Categoría actualizada correctamente.",
+      message:
+        "Categoría actualizada correctamente.",
       data: category,
     });
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") {
       return res.status(409).json({
-        message: "Ya existe una categoría con ese nombre.",
+        message:
+          "Ya existe una categoría con ese nombre.",
       });
     }
 
-    console.error("Error al actualizar categoría:", error.message);
+    console.error(
+      "Error al actualizar categoría:",
+      error.message
+    );
 
     return res.status(500).json({
       message: "Error interno del servidor.",
@@ -172,17 +165,12 @@ const updateCategory = async (req, res) => {
 const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id } = req.query;
+    const userId = req.user.id;
 
     if (!isValidUUID(id)) {
       return res.status(400).json({
-        message: "El id de la categoría no es válido.",
-      });
-    }
-
-    if (!user_id) {
-      return res.status(400).json({
-        message: "El usuario es obligatorio.",
+        message:
+          "El id de la categoría no es válido.",
       });
     }
 
@@ -197,7 +185,7 @@ const deleteCategory = async (req, res) => {
                 AND user_id = ?
                 LIMIT 1
             `,
-      [id, user_id],
+      [id, userId]
     );
 
     if (categories.length === 0) {
@@ -206,7 +194,9 @@ const deleteCategory = async (req, res) => {
       });
     }
 
-    const backup = categoryDecorator(categories[0]);
+    const backup = categoryDecorator(
+      categories[0]
+    );
 
     await pool.execute(
       `
@@ -214,7 +204,7 @@ const deleteCategory = async (req, res) => {
                 WHERE id = ?
                 AND user_id = ?
             `,
-      [id, user_id],
+      [id, userId]
     );
 
     return res.status(200).json({
@@ -228,7 +218,10 @@ const deleteCategory = async (req, res) => {
       });
     }
 
-    console.error("Error al eliminar categoría:", error.message);
+    console.error(
+      "Error al eliminar categoría:",
+      error.message
+    );
 
     return res.status(500).json({
       message: "Error interno del servidor.",
@@ -236,4 +229,9 @@ const deleteCategory = async (req, res) => {
   }
 };
 
-export { createCategory, getCategories, updateCategory, deleteCategory };
+export {
+  createCategory,
+  getCategories,
+  updateCategory,
+  deleteCategory,
+};

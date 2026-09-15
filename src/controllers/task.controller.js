@@ -11,7 +11,6 @@ import {
     isValidTaskStatus,
 } from "../utils/statusTasks.js";
 
-
 const store = async (req, res) => {
     let connection;
     let transactionStarted = false;
@@ -22,20 +21,22 @@ const store = async (req, res) => {
             description = null,
             is_completed = statusTasks.PENDING,
             category_id,
-            user_id,
             tags = [],
         } = req.body;
 
-        if (!title?.trim() || !category_id || !user_id) {
+        const userId = req.user.id;
+
+        if (!title?.trim() || !category_id) {
             return res.status(400).json({
                 message:
-                    "El título, la categoría y el usuario son obligatorios.",
+                    "El título y la categoría son obligatorios.",
             });
         }
 
         if (!isValidTaskStatus(is_completed)) {
             return res.status(400).json({
-                message: "El estado de la tarea no es válido.",
+                message:
+                    "El estado de la tarea no es válido.",
             });
         }
 
@@ -74,7 +75,7 @@ const store = async (req, res) => {
                 AND user_id = ?
                 LIMIT 1
             `,
-            [category_id, user_id]
+            [category_id, userId]
         );
 
         if (categories.length === 0) {
@@ -100,10 +101,13 @@ const store = async (req, res) => {
                     WHERE user_id = ?
                     AND id IN (${placeholders})
                 `,
-                [user_id, ...uniqueTags]
+                [userId, ...uniqueTags]
             );
 
-            if (existingTags.length !== uniqueTags.length) {
+            if (
+                existingTags.length !==
+                uniqueTags.length
+            ) {
                 return res.status(400).json({
                     message:
                         "Una o más etiquetas no existen o no pertenecen al usuario.",
@@ -134,7 +138,7 @@ const store = async (req, res) => {
                 normalizedDescription,
                 is_completed,
                 category_id,
-                user_id,
+                userId,
             ]
         );
 
@@ -161,7 +165,7 @@ const store = async (req, res) => {
             is_completed,
             category_id,
             category_name: categories[0].name,
-            user_id,
+            user_id: userId,
             tags: existingTags,
         });
 
@@ -186,16 +190,9 @@ const store = async (req, res) => {
     }
 };
 
-
 const index = async (req, res) => {
     try {
-        const { user_id } = req.query;
-
-        if (!user_id) {
-            return res.status(400).json({
-                message: "El usuario es obligatorio.",
-            });
-        }
+        const userId = req.user.id;
 
         const [tasks] = await pool.execute(
             `
@@ -210,7 +207,7 @@ const index = async (req, res) => {
                 WHERE user_id = ?
                 ORDER BY title ASC
             `,
-            [user_id]
+            [userId]
         );
 
         if (tasks.length === 0) {
@@ -221,7 +218,9 @@ const index = async (req, res) => {
 
         const categoryIds = [
             ...new Set(
-                tasks.map((task) => task.category_id)
+                tasks.map(
+                    (task) => task.category_id
+                )
             ),
         ];
 
@@ -238,10 +237,12 @@ const index = async (req, res) => {
                 WHERE user_id = ?
                 AND id IN (${categoryPlaceholders})
             `,
-            [user_id, ...categoryIds]
+            [userId, ...categoryIds]
         );
 
-        const taskIds = tasks.map((task) => task.id);
+        const taskIds = tasks.map(
+            (task) => task.id
+        );
 
         const taskPlaceholders = taskIds
             .map(() => "?")
@@ -259,7 +260,7 @@ const index = async (req, res) => {
                 WHERE tags.user_id = ?
                 AND tags_task.task_id IN (${taskPlaceholders})
             `,
-            [user_id, ...taskIds]
+            [userId, ...taskIds]
         );
 
         return res.status(200).json({
@@ -281,7 +282,6 @@ const index = async (req, res) => {
     }
 };
 
-
 const updateTask = async (req, res) => {
     let connection;
     let transactionStarted = false;
@@ -294,9 +294,10 @@ const updateTask = async (req, res) => {
             description = null,
             is_completed,
             category_id,
-            user_id,
             tags = [],
         } = req.body;
+
+        const userId = req.user.id;
 
         if (!isValidUUID(id)) {
             return res.status(400).json({
@@ -305,10 +306,10 @@ const updateTask = async (req, res) => {
             });
         }
 
-        if (!title?.trim() || !category_id || !user_id) {
+        if (!title?.trim() || !category_id) {
             return res.status(400).json({
                 message:
-                    "El título, la categoría y el usuario son obligatorios.",
+                    "El título y la categoría son obligatorios.",
             });
         }
 
@@ -353,7 +354,7 @@ const updateTask = async (req, res) => {
                     AND user_id = ?
                     LIMIT 1
                 `,
-                [id, user_id]
+                [id, userId]
             );
 
         if (existingTasks.length === 0) {
@@ -373,7 +374,7 @@ const updateTask = async (req, res) => {
                     AND user_id = ?
                     LIMIT 1
                 `,
-                [category_id, user_id]
+                [category_id, userId]
             );
 
         if (categories.length === 0) {
@@ -400,7 +401,7 @@ const updateTask = async (req, res) => {
                         WHERE user_id = ?
                         AND id IN (${placeholders})
                     `,
-                    [user_id, ...uniqueTags]
+                    [userId, ...uniqueTags]
                 );
 
             if (
@@ -434,7 +435,7 @@ const updateTask = async (req, res) => {
                 is_completed,
                 category_id,
                 id,
-                user_id,
+                userId,
             ]
         );
 
@@ -469,7 +470,7 @@ const updateTask = async (req, res) => {
             is_completed,
             category_id,
             category_name: categories[0].name,
-            user_id,
+            user_id: userId,
             tags: existingTags,
         });
 
@@ -494,25 +495,18 @@ const updateTask = async (req, res) => {
     }
 };
 
-
 const deleteTask = async (req, res) => {
     let connection;
     let transactionStarted = false;
 
     try {
         const { id } = req.params;
-        const { user_id } = req.query;
+        const userId = req.user.id;
 
         if (!isValidUUID(id)) {
             return res.status(400).json({
                 message:
                     "El id de la tarea no es válido.",
-            });
-        }
-
-        if (!user_id) {
-            return res.status(400).json({
-                message: "El usuario es obligatorio.",
             });
         }
 
@@ -526,7 +520,7 @@ const deleteTask = async (req, res) => {
                 AND user_id = ?
                 LIMIT 1
             `,
-            [id, user_id]
+            [id, userId]
         );
 
         if (tasks.length === 0) {
@@ -552,7 +546,7 @@ const deleteTask = async (req, res) => {
                 WHERE id = ?
                 AND user_id = ?
             `,
-            [id, user_id]
+            [id, userId]
         );
 
         await connection.commit();
@@ -579,7 +573,6 @@ const deleteTask = async (req, res) => {
         connection?.release();
     }
 };
-
 
 export {
     store,
