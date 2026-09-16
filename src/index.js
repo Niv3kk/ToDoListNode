@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
 
 import userRoutes from "./routes/user.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
@@ -12,6 +13,22 @@ import { authMiddleware } from "./middlewares/auth.middleware.js";
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+
+app.use(
+    cors({
+        origin: process.env.CLIENT_URL,
+        methods: [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+        ],
+        allowedHeaders: [
+            "Content-Type",
+            "Authorization",
+        ],
+    })
+);
 
 app.use(express.json());
 
